@@ -1,4 +1,5 @@
 const customer = require('../Models/customers');
+const {ObjectId} = require('mongodb');
 
 exports.findCustomerByPhone = (customerPhone,callback) => {
     customer.findOne({
@@ -12,33 +13,6 @@ exports.findCustomerByPhone = (customerPhone,callback) => {
         }
     })
 }
-
-exports.findCustomerByEmail = (customerEmail,callback) => {
-    customer.findOne({
-            email : customerEmail
-    },(error,customer) => {
-        if(error) {
-            callback(error,null);
-        }
-        else {
-            callback(null,customer);
-        }
-    })
-}
-
-// exports.addNewCustomer = (customer,callback) => {
-//     customer.create({ 
-//         customer 
-//     }
-//     ,(error,result) => {
-//         if(error) {
-//             callback(error,null);
-//         }
-//         else {
-//             callback(null,result);
-//         }
-//     })
-// }
 
 exports.addNewCustomer = (newCustomer,callback) => {
     customer.create(newCustomer
@@ -59,7 +33,24 @@ exports.addNewBooking = async (newBooking) => {
         },
         {
             $push : {
-                customer_bookings: newBooking.bookingId
+                bookings: newBooking.bookingId
+            }
+        })
+        return result;
+    }
+    catch(error) {
+        throw error;
+    }
+}
+
+exports.cancelBooking = async (booking) => {
+    try {
+        let result = await customer.updateOne({
+            _id: booking.customerId,
+        },
+        {
+            $pull : {
+                bookings: booking.bookingId
             }
         })
         return result;

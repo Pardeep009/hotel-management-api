@@ -60,17 +60,11 @@ router.post('/bookRooms', (req,res) => {
                                 else {
                                     console.log(result);
                                     doBooking(obj,avialableRooms,result._id,res);
-                                    // res.status(200).json({
-                                    //     msg: 'done'
-                                    // })
                                 }
                             })
                         }
                         else {
                             doBooking(obj,avialableRooms,customer._id,res);
-                            // res.status(200).json({
-                            //     msg: 'done'
-                            // })
                         }
                     }
                 });
@@ -85,6 +79,7 @@ router.post('/bookRooms', (req,res) => {
 })
 
 async function doBooking(obj, avialableRooms, customerId, res) {
+    let newBookingIds = [];
     for(let i=0;i<Number(obj.required_no_of_rooms);i++) {
         let newBooking = {
             bookedroom_number: avialableRooms[i].room_number,
@@ -102,6 +97,7 @@ async function doBooking(obj, avialableRooms, customerId, res) {
                 customerId: customerId,
                 bookingId: booking._id
             })
+            newBookingIds.push(booking._id);
         }
         catch(error) {
             res.status(500).json({
@@ -110,8 +106,53 @@ async function doBooking(obj, avialableRooms, customerId, res) {
         }
     }
     res.status(200).json({
-        msg: 'done'
+        msg: 'done',
+        bookingId: newBookingIds
     })
 }
+
+/* cancel booking of a given booking id
+req.body = {
+    bookingId : 5c0cd37153705210118d090e,
+}
+*/
+router.post('/cancelBooking',(req,res) => {
+    let obj = {...req.body};  
+    bookingsController.findBookingById(obj.bookingId,async (error, booking) => {
+        if(error) {
+            console.log(error);
+            res.status(500).json({
+                msg: 'Internal Server Error!!!'
+            })
+        }
+        else if(!booking) {
+            res.status(400).json({
+                mag: 'Wrong Booking id'
+            })
+        }
+        else {
+            try {
+                await bookingsController.cancelBooking(obj.bookingId)
+                await roomsController.cancelBooking({
+                    room_number: booking.bookedroom_number,
+                    bookingId: obj.bookingId
+                })
+                await customersController.cancelBooking({
+                    bookingId: obj.bookingId,
+                    customerId: booking.booking_customer
+                })
+                res.status(200).json({
+                    msg: 'Booking Deleted'
+                })
+            }
+            catch(error) {
+                console.log(error);
+                res.status(500).json({
+                    msg: 'Internal Server Error!!!'
+                })
+            }
+        }
+    })
+})
 
 module.exports = router;

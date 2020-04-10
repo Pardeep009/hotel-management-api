@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const schema = mongoose.Schema;
 
 const customerSchema = new mongoose.Schema({
@@ -6,10 +6,10 @@ const customerSchema = new mongoose.Schema({
         type: Number,
         required : true
     },
-    customer_bookings: [{            // booking status for each customer
+    bookings: [{                    // bookings of each customer
         type: schema.Types.ObjectId,
-        ref: "bookings"
+        ref: 'bookings'
     }]
 })
 
-module.exports = mongoose.model("customers", customerSchema);
+module.exports = mongoose.model('customers', customerSchema);

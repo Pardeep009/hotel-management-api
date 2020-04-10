@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const roomSchema = new mongoose.Schema({
     room_number: {                      // a unique room number
@@ -13,20 +13,15 @@ const roomSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    currently_booked: {                // is room currently avilable
+    currently_booked: {                // is room currently avialable
         type: Boolean,
         default: false                  // whenever we add a new room,by default it is avilable for booking
     },
-    future_bookings: [{                        // will include all the furure booking status of the room
+    bookings: [{                        // will include all the booking status of the room
         type: mongoose.Schema.Types.ObjectId,
-        ref: "bookings",
-        // autopopulate: true
-    }],
-    past_bookings: [{                          // will include all the past booking status of the room
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "bookings"
+        ref: 'bookings',
     }],
 })
 
-const room = mongoose.model("rooms", roomSchema);
+const room = mongoose.model('rooms', roomSchema);
 module.exports = room;

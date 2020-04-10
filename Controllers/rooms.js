@@ -1,7 +1,11 @@
-const room = require('../Models/rooms');
+const roomModel = require('../Models/rooms');
+const {ObjectId} = require('mongodb');
 
-exports.addRoom = (obj,callback) => {
-    room.create(obj,(error,result) => {
+exports.addRoom = (newRoom,callback) => {
+    newRoom.room_number = Number(newRoom.room_number);
+    newRoom.price = Number(newRoom.price);
+    newRoom.capacity = Number(newRoom.capacity);
+    roomModel.create(newRoom,(error,result) => {
         if(error)
         {
             callback(error,null);
@@ -13,7 +17,7 @@ exports.addRoom = (obj,callback) => {
 }
 
 exports.getAllRooms = (callback) => {
-    room.find({},(error,allrooms) => {
+    roomModel.find({},(error,allrooms) => {
         if(error)
         {
             callback(error,null);
@@ -25,7 +29,7 @@ exports.getAllRooms = (callback) => {
 }
 
 exports.currentlyAvialableRooms = (callback) => {
-    room.find({
+    roomModel.find({
         currently_booked : false
     },(error,allrooms) => {
         if(error)
@@ -39,7 +43,7 @@ exports.currentlyAvialableRooms = (callback) => {
 }
 
 exports.currentlyNotAvialableRooms = (callback) => {
-    room.find({
+    roomModel.find({
         currently_booked : true
     },(error,allrooms) => {
         if(error)
@@ -52,9 +56,9 @@ exports.currentlyNotAvialableRooms = (callback) => {
     })
 }
 
-exports.makeRoomCurrentlyAvialable = (obj,callback) => {
-    room.updateOne({
-        room_number : obj.room_number
+exports.makeRoomCurrentlyAvialable = (room,callback) => {
+    roomModel.updateOne({
+        room_number : Number(room.room_number)
     },
     {
         $set : {
@@ -71,9 +75,9 @@ exports.makeRoomCurrentlyAvialable = (obj,callback) => {
     })
 }
 
-exports.makeRoomCurrentlyNotAvialable = (obj,callback) => {
-    room.updateOne({
-        room_number : obj.room_number
+exports.makeRoomCurrentlyNotAvialable = (room,callback) => {
+    roomModel.updateOne({
+        room_number : Number(room.room_number)
     },
     {
         $set : {
@@ -95,40 +99,60 @@ exports.getAvialableRooms = (dates,callback) => {
         checkIn : new Date(dates.checkIn.year, dates.checkIn.month, dates.checkIn.day, 12, 0, 0, 0).getTime(),
         checkOut: new Date(dates.checkOut.year, dates.checkOut.month, dates.checkOut.day, 12, 0, 0, 0).getTime()
     }
-    room.find({}).populate('future_bookings').exec((error,rooms) => {
+    roomModel.find({}).populate('bookings').exec((error,allRooms) => {
         if(error)
         {
             callback(error,null);
         }
         else {
-            rooms = rooms.filter((room) => {
-                if(room.future_bookings.length == 0)
+            allRooms = allRooms.filter((room) => {
+                if(room.bookings.length === 0)
                 {
                     return true;
                 }
                 else {
-                    for(let i in room.future_bookings) {
+                    for(let i in room.bookings) {
+                        if(room.bookings[i].isDeleted === true) {
+                            return true;
+                        }
                         let booked_dates = {
-                            start_date: new Date(room.future_bookings[i].start_date.year, room.future_bookings[i].start_date.month, room.future_bookings[i].start_date.day ,12, 0, 0, 0).getTime(),
-                            end_date: new Date(room.future_bookings[i].end_date.year, room.future_bookings[i].end_date.month, room.future_bookings[i].end_date.day, 12, 0, 0, 0).getTime(),
+                            start_date: new Date(room.bookings[i].start_date.year, room.bookings[i].start_date.month, room.bookings[i].start_date.day ,12, 0, 0, 0).getTime(),
+                            end_date: new Date(room.bookings[i].end_date.year, room.bookings[i].end_date.month, room.bookings[i].end_date.day, 12, 0, 0, 0).getTime(),
                         }
                         return booking_dates.checkIn >= booked_dates.end_date || booking_dates.checkOut <= booked_dates.start_date ? true : false
                     }
                 }
             })
-            callback(null,rooms);
+            callback(null,allRooms);
         }
     })
 }
 
 exports.bookRoom = async (newBooking) => {
     try {
-        let result = await room.updateOne({
-            room_number: newBooking.room_number,
+        let result = await roomModel.updateOne({
+            room_number: Number(newBooking.room_number),
         },
         {
             $push : {
-                future_bookings: newBooking.bookingId
+                bookings: ObjectId(newBooking.bookingId)
+            }
+        })
+        return result;
+    }
+    catch(error) {
+        throw error;
+    }
+}
+
+exports.cancelBooking = async (booking) => {
+    try {
+        let result = await roomModel.updateOne({
+            room_number: Number(booking.room_number),
+        },
+        {
+            $pull : {
+                bookings: ObjectId(booking.bookingId)
             }
         })
         return result;
