@@ -29,11 +29,11 @@ exports.addNewCustomer = (newCustomer,callback) => {
 exports.addNewBooking = async (newBooking) => {
     try {
         let result = await customer.updateOne({
-            _id: newBooking.customerId,
+            _id: ObjectId(newBooking.customerId),
         },
         {
             $push : {
-                bookings: newBooking.bookingId
+                bookings: ObjectId(newBooking.bookingId)
             }
         })
         return result;
@@ -46,11 +46,11 @@ exports.addNewBooking = async (newBooking) => {
 exports.cancelBooking = async (booking) => {
     try {
         let result = await customer.updateOne({
-            _id: booking.customerId,
+            _id: ObjectId(booking.customerId),
         },
         {
             $pull : {
-                bookings: booking.bookingId
+                bookings: ObjectId(booking.bookingId)
             }
         })
         return result;
